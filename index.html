@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Petualangan Pokemon</title>
+
+  <!-- Fonts & Styles -->
+  <link rel="icon" type="image/png" href="logo_pokeball.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    * {
+      font-family: 'Press Start 2P', cursive;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: black;
+      font-size: 12px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #ddd;
+    }
+
+    /* D-pad grid style */
+    #controls {
+      position: absolute;
+      bottom: 220px;
+      left: 30px;
+      width: 120px;
+      height: 120px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 5px;
+      z-index: 20;
+    }
+
+    #controls button {
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      font-size: 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    #controls button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #controls .empty {
+      pointer-events: none;
+      background: transparent;
+    }
+
+    #userInterface {
+      display: none;
+    }
+
+    #enemyHealthBar, #playerHealthBar {
+      height: 6px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .infoBox {
+      background-color: #F8F8F8;
+      width: 250px;
+      position: absolute;
+      border: 3px solid #606060;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 2px #E8E8E8, 2px 2px 0px rgba(0,0,0,0.2);
+    }
+
+    #enemyInfoBox {
+      top: 50px;
+      left: 50px;
+    }
+
+    #playerInfoBox {
+      bottom: 200px;
+      right: 50px;
+    }
+
+    #dialogueBox {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 18px;
+      line-height: 1.6;
+      cursor: pointer;
+    }
+    
+
+
+#attacksBox button {
+  font-size: 16px;
+  background-color: #f8f9fa;
+  border: 3px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.1s;
+  text-align: center;
+  padding: 8px 4px;
+}
+
+#attacksBox button:hover {
+  background-color: #e9ecef;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.attack-dialogue {
+  font-size: 14px;
+  border: 3px solid black;
+  background-color: white;
+  padding: 12px;
+  margin: 0 auto;
+  display: inline-block;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.attack-dark {
+  background-color: #1c1c1c;
+  color: white;
+}
+
+.attack-fire {
+  background-color: #ff4c4c;
+  color: white;
+}
+
+.attack-wind {
+  background-color: #d4f1f9;
+  color: #2b2b2b;
+}
+
+
+.battleOptions {
+  width: 30%;
+  height: 100%;
+  display: flex;
+  align-items: center;     /* Tengah secara vertikal */
+  justify-content: center; /* Tengah secara horizontal */
+  background-color: white;
+  border-left: 4px solid black;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+    /* Interact Button Style */
+    #interactButton {
+      position: absolute;
+      bottom: 220px;
+      right: 30px;
+      width: 80px;
+      height: 80px;
+      border-radius: 70%;
+      background-color: white;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+
+#toggleAttacksBtn {
+  position: absolute;
+  bottom: 100px;
+  left: 20px;
+  z-index: 10;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+/* opsional animasi dots */
+#loadingScreen::after {
+  content: '...';
+  animation: dots 1.5s steps(5, end) infinite;
+}
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+.floating-text {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1000;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.bar-text {
+  position: absolute;
+  right: 0;
+  top: -12px;
+  font-size: 8px;
+  color: black;
+}
+
+#actionMenuBox button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #000;
+}
+
+#actionMenuBox button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0 #000;
+}
+
+
+
+  </style>
+</head>
+
+<body>
+  <div style="position: relative; width: 100vw; height: 100vh; overflow: hidden; display: block;">
+    <div id="overlappingDiv" style="background-color: black; position: absolute; top: 0; right: 0; bottom: 0; left: 0; opacity: 0; pointer-events: none; z-index: 10;"></div>
+<div id="loadingScreen" style="
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background-color: #111;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 20px;
+  z-index: 10000; /* lebih tinggi dari tutorial */
+">
+  Loading Game...
+</div>
+
+    <canvas></canvas>
+
+    <div id="characterDialogueBox" style="background-color: white; height: 180px; position: absolute; bottom: 0; left: 0; right: 0; border-top: 4px black solid; display: none; padding: 12px;"></div>
+
+    <div id="userInterface">
+      <div id="enemyInfoBox" class="infoBox">
+        <h1 id="enemyName" style="font-size: 16px; display: inline-block;">Draggle</h1>
+        <h1 id="enemyLevel" style="font-size: 12px; float: right; color: #333;">Lv. 1</h1>
+        <div style="position: relative; margin-top: 8px;">
+          <div style="height: 6px; background-color: #ccc; border: 1px solid #555; border-radius: 4px;"></div>
+          <div id="enemyHealthBar" style="background-color: #4ade80; border: 1px solid #22c55e; border-radius: 4px; position: absolute; top: 0; left: 0; height: 6px; width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Tombol untuk buka/close menu -->
+<!-- Tombol untuk buka/close info musuh -->
+<button id="toggleStatsBtn" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">👁️ Lihat Info Musuh</button>
+
+<!-- Panel info musuh dinamis -->
+<div id="enemyStatsPanel" style="display: none; position: absolute; top: 50px; right: 10px; background: white; border: 2px solid black; padding: 10px; z-index: 1000;">
+  <p id="panelEnemyName">Nama: -</p>
+  <p id="panelEnemyType">Tipe: -</p>
+  <p id="panelEnemyStats">HP: - | Mana: - | Speed: -</p>
+</div>
+
+
+      <div id="playerInfoBox" class="infoBox">
+        <h1 id="playerNameText" style="font-size: 16px; display: inline-block;">Emby</h1>
+        <h1 id="playerLevel" style="font-size: 12px; float: right; color: #333;">Lv. 1</h1>
+        <div style="position: relative; margin-top: 8px; margin-bottom: 4px;">
+          <div style="height: 6px; background-color: #ccc; border: 1px solid #555; border-radius: 4px;"></div>
+          <div id="playerHealthBar" style="background-color: #4ade80; border: 1px solid #22c55e; border-radius: 4px; position: absolute; top: 0; left: 0; height: 6px; width: 100%;"></div>
+        </div>
+        <div style="text-align: right; font-size: 12px; font-weight: bold; margin-bottom: 8px;" id="playerHealthText">100/100</div>
+        <div style="position: relative">
+          <div style="height: 3px; background-color: #ccc;"></div>
+          <div id="playerExpBar" style="height: 3px; background-color: #3b82f6; position: absolute; top: 0; left: 0; width: 0%;"></div>
+        </div>
+      </div>
+      <div id="bottomContainer" style="background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%); height: 180px; position: absolute; bottom: 0; left: 0; right: 0; border-top: 4px black solid; display: flex;">
+        
+        <!-- Left Side (Dialogue or Attacks) -->
+        <div id="bottomLeftArea" style="width: 55%; border-right: 4px solid black; position: relative;">
+          <div id="dialogueBox" style="position: absolute; top:0; left:0; right:0; bottom:0; padding: 20px; font-size: 24px; line-height: 1.5; cursor: pointer; display: flex; align-items: center; z-index: 5;">What will Emby do?</div>
+          
+          <div id="attacksBox" style="display: none; height: 100%; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 15px;"></div>
+        </div>
+        
+        <!-- Right Side (Action Menu or Attack Info) -->
+        <div id="bottomRightArea" style="width: 45%; position: relative;">
+          <!-- 4 Action Buttons -->
+          <div id="actionMenuBox" style="display: grid; height: 100%; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 15px;">
+            <button id="btnFight" style="background-color: #ff6b6b; color: white; font-weight: bold; font-size: 18px; border: 3px solid #333; border-radius: 8px; cursor: pointer; box-shadow: 2px 2px 0 #000;">FIGHT</button>
+            <button id="btnBag" style="background-color: #fca311; color: white; font-weight: bold; font-size: 18px; border: 3px solid #333; border-radius: 8px; cursor: pointer; box-shadow: 2px 2px 0 #000;">BAG</button>
+            <button id="btnPokemon" style="background-color: #4ade80; color: white; font-weight: bold; font-size: 18px; border: 3px solid #333; border-radius: 8px; cursor: pointer; box-shadow: 2px 2px 0 #000;">POKéMON</button>
+            <button id="btnRun" style="background-color: #3b82f6; color: white; font-weight: bold; font-size: 18px; border: 3px solid #333; border-radius: 8px; cursor: pointer; box-shadow: 2px 2px 0 #000;">RUN</button>
+          </div>
+          
+          <!-- Attack Details (PP & Type) -->
+          <div id="attackInfoBox" style="display: none; height: 100%; padding: 20px; flex-direction: column; justify-content: center;">
+             <h1 id="attackPpText" style="font-size: 20px; margin-bottom: 15px;">PP --/--</h1>
+             <h1 id="attackTypeText" style="font-size: 20px;">TYPE/---</h1>
+          </div>
+          
+          <!-- Bag Box -->
+          <div id="bagBox" style="display: none; height: 100%; padding: 10px; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- 🎮 D-pad Virtual Controls -->
+    <div id="controls">
+      <div class="empty"></div>
+      <button id="up">↑</button>
+      <div class="empty"></div>
+      <button id="left">←</button>
+      <div class="empty"></div>
+      <button id="right">→</button>
+      <div class="empty"></div>
+      <button id="down">↓</button>
+      <div class="empty"></div>
+    </div>
+
+    <!-- Tombol Interaksi (🤝) -->
+    <button id="interactButton">🤝</button>
+    <audio controls src="./audio/fireballHit.wav"></audio>
+    <div id="dialogueContainer"></div>
+    </div>
+    <div id="dialogueBox" style="display: none;"></div>
+    <div id="notifBox" style="
+  display: none;
+  position: absolute;
+  bottom: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.95);
+  padding: 12px 18px;
+  border: 2px solid black;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'Press Start 2P', cursive;
+  z-index: 9999;
+  color: black;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+"></div>
+
+
+  <!-- 🔊 Game Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js" crossorigin="anonymous"></script>
+  <script src="data/audio.js"></script>
+  <script src="data/battleZones.js"></script>
+  <script src="data/collisions.js"></script>
+  <script src="data/attacks.js"></script>
+  <script src="data/monsters.js"></script>
+  <script src="data/characters.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="classes.js"></script>
+  <script src="script.js"></script>
+  <script src="battleScene.js"></script>
+
+  <!-- 🧠 Virtual D-pad Logic -->
+  <script>
+
+     window.addEventListener('load', () => {
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    if (!isTouchDevice) {
+      // Sembunyikan tombol-tombol jika bukan perangkat sentuh
+      document.getElementById('controls').style.display = 'none';
+      document.getElementById('interactButton').style.display = 'none';
+    }
+  });
+    
+    function handleInteraction() {
+      if (player.isInteracting) {
+        player.interactionAsset.dialogueIndex++;
+
+        const { dialogueIndex, dialogue } = player.interactionAsset;
+        if (dialogueIndex <= dialogue.length - 1) {
+          document.querySelector('#characterDialogueBox').innerHTML =
+            player.interactionAsset.dialogue[dialogueIndex];
+          return;
+        }
+
+
+        player.isInteracting = false;
+        player.interactionAsset.dialogueIndex = 0;
+        document.querySelector('#characterDialogueBox').style.display = 'none';
+      } else {
+        if (!player.interactionAsset) return;
+
+        const firstMessage = player.interactionAsset.dialogue[0];
+        document.querySelector('#characterDialogueBox').innerHTML = firstMessage;
+        document.querySelector('#characterDialogueBox').style.display = 'flex';
+        player.isInteracting = true;
+
+        if (typeof player.interactionAsset.onInteract === 'function') {
+          player.interactionAsset.onInteract();
+        }
+      }
+    }
+// Interaksi via keyboard (spasi)
+window.addEventListener('keydown', (e) => {
+  // Jika pemain sedang berinteraksi, lanjutkan dialog saat menekan spasi
+  if (player.isInteracting) {
+    if (e.code === 'Space') {  // Gunakan 'code' untuk mendeteksi tombol spasi
+      e.preventDefault();
+      handleInteraction();  // Panggil fungsi untuk melanjutkan dialog
+    }
+    return;  // Jika sedang berinteraksi, keluar dari event listener
+  }
+
+  // Kode lainnya untuk gerakan atau aksi jika tidak sedang interaksi...
+});
+
+// Interaksi via tombol mobile (🤝)
+document.getElementById('interactButton').addEventListener('click', handleInteraction);
+document.getElementById('interactButton').addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  handleInteraction();
+});
+
+
+  </script>
+</body>
+</html>
